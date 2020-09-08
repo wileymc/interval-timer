@@ -11,7 +11,7 @@ import Combine
 
 struct WarmupView: View {
     
-    @Binding var timer: Publishers.Autoconnect<Timer.TimerPublisher>
+    @State var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @Binding var initialTime: Int
     @Binding var warmupTimeSelectedIndex: Int
     @Binding var workTimeSelectedIndex: Int
@@ -42,18 +42,22 @@ struct WarmupView: View {
                                Text("Exit").padding().font(.system(size: 15))
                            }.foregroundColor(Palette.salmon)
                         }
-                        Text("Get Ready").font(.system(size: 60))
+                        VStack {
+                            Text("Get Ready").font(.system(size: 60))
+                            Text("To Work").font(.system(size: 40))
+                        }
+                        
                         Spacer()
                         ZStack(alignment: .center) {
-                                        ProgressRing(progress: CGFloat(self.progress), color: Palette.pink)
+                                        ProgressRing(progress: CGFloat(self.progress), color: Palette.salmon)
                             Text("\(self.timeRemaining)")
                                 .font(.system(size: 160))
                                 .onReceive(self.timer) { _ in
                                             if self.timeRemaining > 0 {
-                                                self.timeRemaining -= 1
-                                                if self.timeRemaining <= 3 {
-                                                    playSound(sound: "race-beep", type: "wav")
-                                                }
+                                               self.timeRemaining -= 1
+                                               if self.timeRemaining <= 3 {
+                                                   playSound(sound: "race-beep", type: "wav")
+                                               }
                                             }
                                             if self.timeRemaining == 0 {
                                                 playSound(sound: "race-start", type: "wav")
@@ -64,8 +68,19 @@ struct WarmupView: View {
                                         }
                                     }.frame(width: 270, height: 270)
                         Spacer()
+                        
+                        ZStack(alignment: .bottomTrailing) {
+                            self.paused
+                                ? Image(systemName: "play")
+                                    .font(.system(size: 56.0, weight: .bold))
+                                : Image(systemName: "pause")
+                                    .font(.system(size: 56.0, weight: .bold))
+                        }
+                        Spacer()
                     }
-                }
+                }.onAppear(perform: {
+                    self.timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                })
             } else {
                 HStack {
                     VStack {
@@ -84,7 +99,7 @@ struct WarmupView: View {
                     }
                    Spacer()
                    ZStack {
-                     ProgressRing(progress: CGFloat(self.progress), color: Palette.pink)
+                     ProgressRing(progress: CGFloat(self.progress), color: Palette.salmon)
                      Text("\(self.timeRemaining)").font(.system(size: 160)).onReceive(self.timer) { _ in
                        if self.timeRemaining > 0 {
                            self.timeRemaining -= 1
@@ -101,8 +116,27 @@ struct WarmupView: View {
                    }
                }.frame(width: 270, height: 270)
                    Spacer()
-                }
+                   ZStack(alignment: .bottomTrailing) {
+                       self.paused
+                           ? Image(systemName: "play")
+                               .font(.system(size: 56.0, weight: .bold))
+                           : Image(systemName: "pause")
+                               .font(.system(size: 56.0, weight: .bold))
+                   }
+                   Spacer()
+                }.onAppear(perform: {
+                    self.timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                })
             }
+        }.gesture(TapGesture().onEnded({  self.handlePause()  }))
+    }
+    
+    func handlePause() {
+        self.paused = !self.paused
+        if self.paused {
+            self.timer.upstream.connect().cancel()
+        } else {
+            self.timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
         }
     }
 }

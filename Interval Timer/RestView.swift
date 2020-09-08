@@ -4,14 +4,13 @@
 //
 //  Created by Wiley Conte on 6/8/20.
 //  Copyright © 2020 Wiley Conte. All rights reserved.
-//
 
 import SwiftUI
 import Combine
 
 struct RestView: View {
     
-    @Binding var timer: Publishers.Autoconnect<Timer.TimerPublisher>
+    @State var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @Binding var initialTime: Int
     @Binding var intervalsSelectedIndex: Int
     @Binding var warmupTimeSelectedIndex: Int
@@ -76,7 +75,9 @@ struct RestView: View {
                                 .font(.system(size: 56.0, weight: .bold))
                     }
                     Spacer()
-                }
+                }.onAppear(perform: {
+                    self.timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                })
             } else {
                 HStack {
                    VStack {
@@ -124,8 +125,19 @@ struct RestView: View {
                                 .font(.system(size: 56.0, weight: .bold))
                     }
                     Spacer()
-                }
+                }.onAppear(perform: {
+                    self.timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                })
             }
+        }.gesture(TapGesture().onEnded({  self.handlePause()  }))
+    }
+    
+    func handlePause() {
+        self.paused = !self.paused
+        if self.paused {
+            self.timer.upstream.connect().cancel()
+        } else {
+            self.timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
         }
     }
 }
